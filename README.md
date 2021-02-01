@@ -1,1 +1,1 @@
-"# tableplopMonsterJSONConverter" 
+Converts monsters from the Dungeons&Dragons 5th Edition System Reference Documentation (available under the Open Gaming License) to the format accepted by the character import button on the virtual tabletop "TablePlop"
