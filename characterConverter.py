@@ -75,7 +75,7 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
                 monsterSkillBonus = stats[relevant_stat]["value"]
 
             stats[skill] = {
-                "expression": f"{relevant_stat} + ({skill}-proficiency ? proficiency : jack-of-all-trades ? (floor (proficiency / 2)) : 0) + ({skill}-expertise ? proficiency : 0)",
+                "expression": f"{relevant_stat} + ({skill}-expertise ? proficiency*2 : {skill}-proficiency ? proficiency : jack-of-all-trades ? (floor (proficiency / 2)) : 0)",
                 "value": monsterSkillBonus,
                 "subtitle": relevant_stat[:3],
                 "type": "skill",
@@ -85,7 +85,7 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
             proficient = (monsterSkillBonus - stats[relevant_stat]["value"]) == proficiencyBonus
             expert = (monsterSkillBonus - stats[relevant_stat]["value"]) == (proficiencyBonus * 2)
             stats[f"{skill}-proficiency"] = {
-                "value": proficient,
+                "value": proficient or expert,
                 "type": "checkbox",
                 "hidden": True,
                 "parent": skill
@@ -116,6 +116,12 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
             "type": "number",
             "section": "senses",
             "expression": "10 + perception"
+        }
+        stats["passive-insight"] = {
+            "value": 10 + stats['insight']['value'],
+            "type": "number",
+            "section": "senses",
+            "expression": "10 + insight"
         }
         stats["passive-stealth"] = {
             "value": 10 + stats['stealth']['value'],
@@ -174,31 +180,66 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
             "hidden": True,
             "parent": "hit-points"
         }
-        stats["class"] = {
-            "value": monster['type'],
-            "section": "info",
-            "type": "text"
-        }
-        stats["race"] = {
-            "value": monster['subtype'],
-            "section": "info",
-            "type": "text"
-        }
         stats["armor-class"] = {
             "value": monster['armor_class'],
             "section": "info",
             "type": "number"
         }
-        stats["speed"] = {
-            "value": 30,
-            "section": "info",
-            "type": "number"
+        if len(monster['damage_immunities']) > 0:
+            stats['immune-to'] = {
+                'value': monster['damage_immunities'],
+                'section': 'info',
+                'type': 'text'
+            }
+        if len(monster['damage_resistances']) > 0:
+            stats['resistant-to'] = {
+                'value': monster['damage_resistances'],
+                'section': 'info',
+                'type': 'text'
+            }
+        if len(monster['damage_vulnerabilities']) > 0:
+            stats['vulnerable-to'] = {
+                'value': monster['damage_vulnerabilities'],
+                'section': 'info',
+                'type': 'text'
+            }
+        stats['roll-hp'] = {
+            'value': monster['hit_dice'],
+            'section': 'info',
+            'type': 'text',
+            'roll': f"{{roll-hp = {monster['hit_dice']}}} {{hit-points-maximum = roll-hp}} {{hit-points = hit-points-maximum}}"
         }
-        stats["experience"] = {
-            "value": 0,
+        stats["size"] = {
+            "value": monster['size'],
             "section": "info",
-            "type": "number"
+            "type": "text"
         }
+        stats["monster-type"] = {
+            "value": monster['type'] + (f" ({monster['subtype']})" if len(monster['subtype']) > 0 else ''),
+            "section": "info",
+            "type": "text"
+        }
+        stats["alignment"] = {
+            "value": monster['alignment'],
+            "section": "info",
+            "type": "text"
+        }
+        for movementType, movementSpeed in monster['speed_json'].items():
+            if movementType == 'hover':
+                stats[f"{movementType}-fly-speed"] = {
+                    'value': monster['speed_json']['fly'],
+                    'section': 'info',
+                    'type': 'number'
+                }
+            elif (movementType == 'fly') and 'hover' in monster['speed_json'].keys():
+                continue
+            else:
+                stats[f"{movementType}-speed"] = {
+                    'value': movementSpeed,
+                    'section': 'info',
+                    'type': 'number'
+                }
+
         stats["proficiency"] = {
             "value": proficiencyBonus,
             "expression": "2+floor(level/4)",
@@ -215,20 +256,16 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
         info = convertedMonster['info']
         info['description'] = f"<p>{monster['name']}</p>"
 
-        monsterDesc = f"{monster['size']} {monster['type']} {'(' + monster['subtype'] + ')' if monster['subtype'] != '' else ''}, {monster['alignment']}."
-        monsterDesc += f"\nHit Points: {monster['hit_points']} ({monster['hit_dice']})"
-        monsterDesc += f"\nSpeed: {monster['speed']}\nSenses: {monster['senses']}\nLanguages: {monster['languages'] if len(monster['languages']) > 0 else '-'}"
-        monsterDesc += f"\nCR: {monster['challenge_rating']}"
-        monsterDesc += f"\nDamage Vulnerabilities: {monster['damage_vulnerabilities']}" if len(
-            monster['damage_vulnerabilities']) > 0 else ""
-        monsterDesc += f"\nDamage Resistances: {monster['damage_resistances']}" if len(
-            monster['damage_resistances']) > 0 else ""
-        monsterDesc += f"\nDamage Immunities: {monster['damage_immunities']}" if len(
-            monster['damage_immunities']) > 0 else ""
-        monsterDesc += f"\nCondition Immunities: {monster['condition_immunities']}" if len(
+        monsterDesc = f"Senses: {monster['senses']}\n\nLanguages: {monster['languages'] if len(monster['languages']) > 0 else '-'}"
+        monsterDesc += f"\n\nCR: {monster['challenge_rating']}"
+        monsterDesc += f"\n\nCondition Immunities: {monster['condition_immunities']}" if len(
             monster['condition_immunities']) > 0 else ""
 
-        info['notes'] = f"<p>{monsterDesc}</p>"
+        info['notes'] = f"<p><b>Senses:</b> {monster['senses']}</p>" \
+                        f"<p><b>Languages:</b> {monster['languages'] if len(monster['languages']) > 0 else '-'}</p>" \
+                        f"<p><b>CR:</b> {monster['challenge_rating']}</p>" \
+                        f"<p><b>Condition Immunities:</b> {monster['condition_immunities'] if len(monster['condition_immunities']) > 0 else ''}</p>"
+
         info['sections'] = [
             {
                 "name": "abilities",
