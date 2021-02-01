@@ -1,11 +1,12 @@
 import json
 import os
+
 with open('srd5eMonsters.json') as monsterFile:
     monsters = json.load(monsterFile)
 monsterFile.close()
 
 with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
-    # monsterCollection = {"DND5eSRDMonsters": []}
+    monsterCollection = {"DND5eSRDMonsters": []}
     for monster in monsters:
         convertedMonster = {
             "stats": {},
@@ -96,10 +97,10 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
                 "parent": skill
             }
         stats["jack-of-all-trades"] = {
-                                          "value": False,
-                                          "type": "checkbox",
-                                          "section": "skills"
-                                      }
+            "value": False,
+            "type": "checkbox",
+            "section": "skills"
+        }
 
         darkVisionValue = 0
         if 'darkvision' in monster['senses']:
@@ -296,10 +297,10 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
                 convertedAction['section'] = 'actions'
                 convertedMonster['savedMessages'].append(convertedAction)
 
-        # monsterCollection["DND5eSRDMonsters"].append(convertedMonster)
+        monsterCollection["DND5eSRDMonsters"].append(convertedMonster)
 
         with open(f"./tableplopMonsters/{monster['name'].replace('/', '')}.json", 'w') as newFile:
             json.dump(convertedMonster, newFile)
         newFile.close()
-
+    json.dump(monsterCollection, tpMonstersFile)
 tpMonstersFile.close()
