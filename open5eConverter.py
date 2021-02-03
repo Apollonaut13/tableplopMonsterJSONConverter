@@ -207,7 +207,7 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
             'value': monster['hit_dice'],
             'section': 'info',
             'type': 'text',
-            'roll': f"{{roll-hp = {monster['hit_dice']}}} {{hit-points-maximum = roll-hp}} {{hit-points = hit-points-maximum}}"
+            'roll': f"{{roll-hp = {monster['hit_dice']}}} {{hit-points-maximum = roll-hp}} {{hit-points = hit-points-maximum}} !hr"
         }
         stats["size"] = {
             "value": monster['size'],
