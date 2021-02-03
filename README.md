@@ -11,6 +11,7 @@ Method 1 (Main Menu):
 4. Select "Import"
 5. Navigate to the folder that contains the SRD monsters, and find the monster you want.
 6. Confirm import on the pop-up.
+7. Rename the character.
 
 Method 2 (In-scene):
 1. Open the "New Token" menu by right-clicking on the battlemap/grid.
