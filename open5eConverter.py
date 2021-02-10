@@ -5,7 +5,7 @@ with open('sourceJSON/srd5eMonsters.json') as monsterFile:
     monsters = json.load(monsterFile)
 monsterFile.close()
 
-with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
+with open('output/DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
     monsterCollection = {"DND5eSRDMonsters": []}
     for monster in monsters:
         convertedMonster = {
@@ -37,7 +37,7 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
             }
             stats[f"{stat}-save"] = {
                 "expression": f"{stat} + ({stat}-save-proficiency ? proficiency : 0)",
-                "value": monster[f"{stat}_save"] if f"{stat}_save" in monster.keys() else stats[stat]["value"],
+                "value": monster.get(f"{stat}_save", stats[stat]["value"]),
                 "type": "saving-throw",
                 "section": "saving-throws",
                 "roll": f"{stat[:3].upper()} save: {{1d20 + {stat}-save}}"
@@ -69,11 +69,7 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
             'persuasion': 'charisma'
         }
         for skill, relevant_stat in skills.items():
-            try:
-                monsterSkillBonus = monster[skill.replace('-', '_')]
-            except KeyError:
-                monsterSkillBonus = stats[relevant_stat]["value"]
-
+            monsterSkillBonus = monster.get(skill.replace('-', '_'), stats[relevant_stat].get("value"))
             stats[skill] = {
                 "expression": f"{relevant_stat} + ({skill}-expertise ? proficiency*2 : {skill}-proficiency ? proficiency : jack-of-all-trades ? (floor (proficiency / 2)) : 0)",
                 "value": monsterSkillBonus,
@@ -82,8 +78,8 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
                 "section": "skills",
                 "roll": f"{skill.capitalize()} check: {{1d20 + {skill}}}"
             }
-            proficient = (monsterSkillBonus - stats[relevant_stat]["value"]) == proficiencyBonus
-            expert = (monsterSkillBonus - stats[relevant_stat]["value"]) == (proficiencyBonus * 2)
+            proficient = (monsterSkillBonus - stats[relevant_stat].get("value")) == proficiencyBonus
+            expert = (monsterSkillBonus - stats[relevant_stat].get("value")) == (proficiencyBonus * 2)
             stats[f"{skill}-proficiency"] = {
                 "value": proficient or expert,
                 "type": "checkbox",
@@ -143,16 +139,13 @@ with open('DND5eSRDMonstersForTablePlop.json', 'w+') as tpMonstersFile:
         }
 
         casterLevel = CR_int
-        try:
-            specials = monster["special_abilities"]
-            for special in specials:
-                if special["name"] == "Spellcasting":
-                    if "-level" in special["desc"]:
-                        text = special["desc"].split("-level")[0]
-                        casterLevel = int(text.split()[-1][:-2])
-                        # print(f"{monster['name']} is a level {casterLevel} spellcaster.")
-        except KeyError:
-            pass
+        specials = monster.get("special_abilities", [])
+        for special in specials:
+            if special["name"] == "Spellcasting":
+                if "-level" in special["desc"]:
+                    text = special["desc"].split("-level")[0]
+                    casterLevel = int(text.split()[-1][:-2])
+                    # print(f"{monster['name']} is a level {casterLevel} spellcaster.")
         stats["level"] = {
             "value": casterLevel,
             "section": "info",
